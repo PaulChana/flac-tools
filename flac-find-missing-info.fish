@@ -1,9 +1,13 @@
 #!/usr/bin/env fish
-# Recursively scans every .flac file under --path (default: current
-# directory) and reports any that are missing common metadata: TITLE,
-# ARTIST, ALBUM, TRACKNUMBER, ALBUMARTIST, or an embedded picture.
+# Reports .flac files missing common tags or an embedded picture.
 #
-# --extended additionally checks GENRE, DATE, DISCNUMBER, and COMPOSER.
+# Recursively scans every .flac file under --path (default: current
+# directory), or just the FILEs given, and reports any that are missing
+# TITLE, ARTIST, ALBUMARTIST, ALBUM, TRACKNUMBER, TRACKTOTAL, DISCNUMBER,
+# DISCTOTAL, DATE, YEAR, the ReplayGain tags (REPLAYGAIN_TRACK_GAIN/PEAK,
+# REPLAYGAIN_ALBUM_GAIN/PEAK) or an embedded picture.
+#
+# --extended additionally checks GENRE and COMPOSER.
 # --verify additionally runs a full decode integrity test (flac -t) on
 # each file — a corrupted audio stream can make some players report
 # "missing info" even when every tag is actually present.
@@ -23,11 +27,13 @@ source "$script_dir/flac-lib.fish"
 if contains -- --help $argv; or contains -- -h $argv
     echo "Usage: flac-find-missing-info.fish [--no-art] [--extended] [--verify] [--dupes] [--dump]"
     echo "                                    [--path=DIR] [--verbose] [--quiet] [FILE ...]"
-    echo "Recursively scans .flac files and reports any missing TITLE,"
-    echo "ARTIST, ALBUM, TRACKNUMBER, ALBUMARTIST, or embedded cover art."
+    echo "Recursively scans .flac files (or the FILEs given) and reports any"
+    echo "missing TITLE, ARTIST, ALBUMARTIST, ALBUM, TRACKNUMBER, TRACKTOTAL,"
+    echo "DISCNUMBER, DISCTOTAL, DATE, YEAR, ReplayGain tags, or embedded"
+    echo "cover art."
     echo
     echo "  --no-art     Skip the embedded cover art check."
-    echo "  --extended   Also check GENRE, DATE, DISCNUMBER, and COMPOSER."
+    echo "  --extended   Also check GENRE and COMPOSER."
     echo "  --verify     Also run a decode integrity test (flac -t) on each"
     echo "               file — catches corruption that can look like"
     echo "               'missing info' in some players even when tags"
@@ -83,19 +89,23 @@ if contains -- --dump $argv
     set dump_mode 1
 end
 
-set check_tags TITLE ARTIST ALBUM TRACKNUMBER ALBUMARTIST
+set check_tags TITLE ARTIST ALBUMARTIST ALBUM TRACKNUMBER TRACKTOTAL \
+    DISCNUMBER DISCTOTAL DATE YEAR \
+    REPLAYGAIN_TRACK_GAIN REPLAYGAIN_TRACK_PEAK REPLAYGAIN_ALBUM_GAIN REPLAYGAIN_ALBUM_PEAK
 if test $extended -eq 1
-    set check_tags $check_tags GENRE DATE DISCNUMBER COMPOSER
+    set check_tags $check_tags GENRE COMPOSER
 end
 
-# Placeholder values that count as "not really set" even though the tag
-# is technically non-empty — whitespace-only, or generic filler text a
-# player might reasonably treat as fake. Deliberately conservative: words
-# like "none" or "various" are excluded because they're legitimate real
-# titles/artist values (e.g. Meshuggah's "None" EP, "Various Artists" on
-# compilations) and would false-positive.
 set placeholders "unknown" "unknown artist" "unknown album" "unknown title" \
     "n/a" "na" "untitled" "-" "tbd"
+
+function title_matches_filename --argument-names title file
+    set title (string lower -- (string trim -- $title))
+    test -n "$title"; or return 1
+    set stem (string lower -- (string replace -r '\.[^.]*$' '' -- (basename "$file")))
+    set stem (string replace -r '^\d+\s*[-._)]*\s*' '' -- $stem)
+    test "$stem" = "$title"; or test (string split -- ' - ' $stem)[-1] = "$title"
+end
 
 function is_placeholder
     set val (string trim -- $argv[1])
@@ -111,7 +121,6 @@ function is_placeholder
     return 1
 end
 
-# Any non-flag arguments are treated as explicit files to process.
 set explicit_files
 for a in $argv
     if not string match -rq '^--' -- "$a"
@@ -142,19 +151,28 @@ end
 set flagged 0
 set total 0
 
+function tag_values --argument-names tag
+    string match -ri -- "^$tag=.*" $argv[2..-1] | string replace -r '^[^=]*=' ''
+end
+
 for f in $file_list
     set total (math "$total + 1")
     set missing
+    set tags (metaflac --export-tags-to=- "$f")
 
     for tag in $check_tags
-        set val (flac_get_tag "$f" $tag)
+        set val (tag_values $tag $tags)
 
         if contains -- $tag TITLE ARTIST ALBUM
             if is_placeholder "$val" $placeholders
-                set missing $missing "$tag (empty or placeholder)"
+                if not begin
+                        test $tag = TITLE; and title_matches_filename "$val" "$f"
+                    end
+                    set missing $missing "$tag (empty or placeholder)"
+                end
             end
         else
-            if test -z (string trim -- $val)
+            if test -z "$(string join "" -- (string trim -- $val))"
                 set missing $missing $tag
             end
         end
@@ -168,7 +186,7 @@ for f in $file_list
 
     if test $check_dupes -eq 1
         for tag in $check_tags
-            set count (metaflac --show-tag=$tag "$f" | count)
+            set count (count (tag_values $tag $tags))
             if test $count -gt 1
                 set missing $missing "DUPLICATE $tag"
             end

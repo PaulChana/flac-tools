@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "FLAC Tools (Debug)",
+      "cargo": {
+        "args": ["build", "--manifest-path=${workspaceFolder}/app/src-tauri/Cargo.toml"],
+        "filter": { "kind": "bin" }
+      },
+      "cwd": "${workspaceFolder}/app/src-tauri",
+      "preLaunchTask": "ui:dev"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "FLAC Tools (Release)",
+      "cargo": {
+        "args": [
+          "build",
+          "--release",
+          "--manifest-path=${workspaceFolder}/app/src-tauri/Cargo.toml",
+          "--features=tauri/custom-protocol"
+        ],
+        "filter": { "kind": "bin" }
+      },
+      "cwd": "${workspaceFolder}/app/src-tauri",
+      "preLaunchTask": "ui:build"
+    }
+  ]
+}

@@ -1,4 +1,6 @@
 #!/usr/bin/env fish
+# Replaces one ARTIST name with another on every .flac file that has it.
+#
 # Recursively replaces the ARTIST tag on every .flac file under --path
 # (default: current directory), but only for files whose current ARTIST
 # matches OLD_NAME (case-insensitive). Files with a different artist are

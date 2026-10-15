@@ -1,8 +1,9 @@
 #!/usr/bin/env fish
-# Consolidated tag-filler, replacing the separate flac-fill-albumartist,
-# flac-set-composer, flac-set-discnumber, flac-set-date, and
-# flac-set-genre scripts. Each field is filled only where it's currently
-# empty (unless --replace), and only if its flag is passed:
+# Fills in empty ALBUMARTIST, COMPOSER, DISCNUMBER, DATE and GENRE tags,
+# locally or from MusicBrainz.
+#
+# Each field is filled only where it's currently empty (unless --replace),
+# and only if its flag is passed:
 #
 #   --albumartist   ALBUMARTIST <- ARTIST, Title Cased (per file, local)
 #   --composer      COMPOSER <- ALBUMARTIST (per file, local)
@@ -111,7 +112,6 @@ if test $do_date -eq 1; or test $do_genre -eq 1
     end
 end
 
-# --- ALBUMARTIST title-casing (with stylized-name exceptions) -----------
 function fill_title_case
     set exceptions \
         "AC/DC" \
@@ -144,7 +144,6 @@ function fill_title_case
     string join ' ' -- $result
 end
 
-# --- MusicBrainz: DATE ------------------------------------------------
 function lookup_release_date
     set artist $argv[1]
     set album $argv[2]
@@ -163,7 +162,6 @@ function lookup_release_date
     echo $date
 end
 
-# --- MusicBrainz: GENRE -------------------------------------------------
 function lookup_album_genres
     set artist $argv[1]
     set album $argv[2]
@@ -204,7 +202,6 @@ function apply_genre_to_files
     echo $n
 end
 
-# --- Main walk: artist -> album -> file ---------------------------------
 set stopped 0
 
 for artist_dir in $opt_path/*/
@@ -218,7 +215,6 @@ for artist_dir in $opt_path/*/
         continue
     end
 
-    # --- GENRE: needs the whole artist's discography aggregated first ---
     if test $do_genre -eq 1
         set albums
         for d in $flac_dirs
@@ -249,7 +245,7 @@ for artist_dir in $opt_path/*/
 
         set all_flac_files
         for d in $flac_dirs
-            set all_flac_files $all_flac_files $d/*.flac
+            set all_flac_files $all_flac_files (flac_files_in "$d")
         end
 
         if test (count $agg_names) -eq 0
@@ -321,7 +317,6 @@ for artist_dir in $opt_path/*/
         break
     end
 
-    # --- Per-album work: DATE ---------------------------------------
     set seen_albums
     for d in $flac_dirs
         set album (flac_normalize_roman (flac_resolve_album_name "$d"))
@@ -338,8 +333,7 @@ for artist_dir in $opt_path/*/
             end
         end
 
-        # --- Per-file work: ALBUMARTIST, COMPOSER, DISCNUMBER, DATE ---
-        for f in $d/*.flac
+        for f in (flac_files_in "$d")
             if test $do_albumartist -eq 1
                 set cur (flac_get_tag "$f" ALBUMARTIST)
                 if test -z "$cur"; or test $replace -eq 1

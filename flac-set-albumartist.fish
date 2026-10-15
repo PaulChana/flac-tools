@@ -1,4 +1,6 @@
 #!/usr/bin/env fish
+# Sets ALBUMARTIST to the same name on every .flac file.
+#
 # Recursively sets ALBUMARTIST to NEW_NAME on every .flac file under
 # --path (default: current directory), overwriting whatever was there
 # before. Pass --both to also set ARTIST. This is a deliberate,

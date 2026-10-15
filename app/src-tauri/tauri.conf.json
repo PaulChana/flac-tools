@@ -1,0 +1,69 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "FLAC Tools",
+  "version": "1.0.0",
+  "identifier": "com.elf-audio.flac-tools",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "FLAC Tools",
+        "width": 1400,
+        "height": 860,
+        "minWidth": 900,
+        "minHeight": 500,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "visible": false,
+        "backgroundColor": "#23201c"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "dmg",
+      "app"
+    ],
+    "resources": {
+      "../../flac-*.fish": "scripts/"
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.png"
+    ],
+    "publisher": "Escapement Audio",
+    "copyright": "Copyright 2026 Escapement Audio",
+    "category": "Music",
+    "shortDescription": "Browse, fix and tag a FLAC music library",
+    "longDescription": "FLAC Tools browses a FLAC music library, edits its tags, checks it for problems and runs clean-up tools across it.",
+    "macOS": {
+      "minimumSystemVersion": "14.0",
+      "dmg": {
+        "appPosition": {
+          "x": 180,
+          "y": 170
+        },
+        "applicationFolderPosition": {
+          "x": 480,
+          "y": 170
+        },
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        }
+      }
+    }
+  }
+}

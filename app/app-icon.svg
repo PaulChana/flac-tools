@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="FLAC Tools">
+  <defs>
+    <linearGradient id="body" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3a4654"/>
+      <stop offset="1" stop-color="#1b2128"/>
+    </linearGradient>
+    <linearGradient id="window" x1="0" y1="232" x2="0" y2="792" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0b0e12"/>
+      <stop offset="1" stop-color="#12171d"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+    <filter id="glow" x="-20%" y="-60%" width="140%" height="220%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#body)" filter="url(#shadow)"/>
+  <rect x="102" y="102" width="820" height="820" rx="183" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="3"/>
+  <rect x="250" y="232" width="524" height="560" rx="56" fill="url(#window)"/>
+  <rect x="250" y="232" width="524" height="560" rx="56" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="4"/>
+  <rect x="318.0" y="721.6" width="168" height="34.4" rx="7" fill="#4fd18b" filter="url(#glow)"/>
+  <rect x="318.0" y="671.2" width="168" height="34.4" rx="7" fill="#4fd18b" filter="url(#glow)"/>
+  <rect x="318.0" y="620.8" width="168" height="34.4" rx="7" fill="#4fd18b" filter="url(#glow)"/>
+  <rect x="318.0" y="570.4" width="168" height="34.4" rx="7" fill="#4fd18b" filter="url(#glow)"/>
+  <rect x="318.0" y="520.0" width="168" height="34.4" rx="7" fill="#4fd18b" filter="url(#glow)"/>
+  <rect x="318.0" y="469.6" width="168" height="34.4" rx="7" fill="#4fd18b" filter="url(#glow)"/>
+  <rect x="318.0" y="419.2" width="168" height="34.4" rx="7" fill="#f2b33d" filter="url(#glow)"/>
+  <rect x="318.0" y="368.8" width="168" height="34.4" rx="7" fill="#f2b33d" opacity="0.13"/>
+  <rect x="318.0" y="318.4" width="168" height="34.4" rx="7" fill="#f0524f" filter="url(#glow)"/>
+  <rect x="318.0" y="268.0" width="168" height="34.4" rx="7" fill="#f0524f" opacity="0.13"/>
+  <rect x="538.0" y="721.6" width="168" height="34.4" rx="7" fill="#4fd18b" filter="url(#glow)"/>
+  <rect x="538.0" y="671.2" width="168" height="34.4" rx="7" fill="#4fd18b" filter="url(#glow)"/>
+  <rect x="538.0" y="620.8" width="168" height="34.4" rx="7" fill="#4fd18b" filter="url(#glow)"/>
+  <rect x="538.0" y="570.4" width="168" height="34.4" rx="7" fill="#4fd18b" filter="url(#glow)"/>
+  <rect x="538.0" y="520.0" width="168" height="34.4" rx="7" fill="#4fd18b" filter="url(#glow)"/>
+  <rect x="538.0" y="469.6" width="168" height="34.4" rx="7" fill="#4fd18b" filter="url(#glow)"/>
+  <rect x="538.0" y="419.2" width="168" height="34.4" rx="7" fill="#f2b33d" opacity="0.13"/>
+  <rect x="538.0" y="368.8" width="168" height="34.4" rx="7" fill="#f2b33d" filter="url(#glow)"/>
+  <rect x="538.0" y="318.4" width="168" height="34.4" rx="7" fill="#f0524f" opacity="0.13"/>
+  <rect x="538.0" y="268.0" width="168" height="34.4" rx="7" fill="#f0524f" opacity="0.13"/>
+</svg>

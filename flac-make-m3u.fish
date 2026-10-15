@@ -1,4 +1,7 @@
 #!/usr/bin/env fish
+# Writes an .m3u playlist for each album folder, listing its tracks in
+# order.
+#
 # Recursively scans directories under --path (default: current directory).
 # In any directory containing "NN - Name.flac" style files, generates an
 # m3u playlist listing those tracks in order, named after the directory
@@ -27,7 +30,7 @@ flac_parse_common_args $argv
 set created 0
 
 for d in (find "$opt_path" -type d)
-    set flacs $d/*.flac
+    set flacs (flac_files_in "$d")
     if test (count $flacs) -gt 0
         set dirname (basename "$d")
         set out "$d/$dirname.m3u"

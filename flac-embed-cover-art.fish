@@ -1,4 +1,6 @@
 #!/usr/bin/env fish
+# Embeds each album folder's cover.jpg into its .flac files.
+#
 # Recursively scans every directory under --path (default: current
 # directory) that contains .flac files. In each one, finds cover.jpg/
 # cover.jpeg/Folder.jpg/Folder.jpeg (any case, legacy "folder" naming
@@ -42,7 +44,7 @@ set files_skipped_has_art 0
 set files_failed 0
 
 for d in (flac_find_flac_dirs "$opt_path")
-    set flacs $d/*.flac
+    set flacs (flac_files_in "$d")
     set count_flacs (count $flacs)
     if test $count_flacs -eq 0
         continue
@@ -54,7 +56,6 @@ for d in (flac_find_flac_dirs "$opt_path")
     set cover "$d/cover.jpg"
 
     if not test -f "$cover"
-        # Look for a source image under another name/case to rename.
         set found (find -E "$d" -maxdepth 1 -type f -iregex '.*/(cover|folder)\.(jpg|jpeg)$')
         if test (count $found) -gt 0
             set src $found[1]

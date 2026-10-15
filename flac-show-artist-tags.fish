@@ -1,4 +1,6 @@
 #!/usr/bin/env fish
+# Lists the ARTIST and ALBUMARTIST tags of every .flac file.
+#
 # Recursively prints the ARTIST and ALBUMARTIST tags for every .flac file
 # under --path (default: current directory). Read-only — --dry-run is
 # accepted for interface consistency with the rest of the toolkit but has
