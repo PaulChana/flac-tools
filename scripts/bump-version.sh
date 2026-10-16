@@ -47,6 +47,9 @@ for (const relative of [
 }
 NODE
 
+# Bring Cargo.lock's entry for the app up to the new version.
+cargo update --manifest-path "$ROOT/app/src-tauri/Cargo.toml" --offline -p flac-tools -q
+
 CARGO_VERSION=$(grep -m1 '^version = ' "$ROOT/app/src-tauri/Cargo.toml" | sed 's/.*"\(.*\)".*/\1/')
 CONF_VERSION=$(node -e "console.log(require('$ROOT/app/src-tauri/tauri.conf.json').version)")
 PKG_VERSION=$(node -e "console.log(require('$ROOT/app/package.json').version)")

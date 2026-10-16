@@ -38,7 +38,19 @@ if [ "$STATUS" != "Accepted" ]; then
     exit 1
 fi
 
-xcrun stapler staple "$DMG"
+# The ticket can take a little while to reach Apple's servers after the
+# submission is accepted, and the lookup sometimes drops, so retry.
+for ATTEMPT in 1 2 3 4 5 6; do
+    if xcrun stapler staple "$DMG"; then
+        break
+    fi
+    if [ "$ATTEMPT" -eq 6 ]; then
+        echo "error: couldn't staple the DMG after $ATTEMPT tries" >&2
+        exit 1
+    fi
+    echo "Stapling failed (try $ATTEMPT), retrying in 20s..."
+    sleep 20
+done
 
 echo ""
 echo "═══ Verifying the DMG ═══"
