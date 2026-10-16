@@ -16,19 +16,19 @@ if [ ! -f "$DMG" ]; then
     exit 1
 fi
 
-# Staples the notarisation ticket to $1. The ticket can take a little
-# while to reach Apple's servers after the submission is accepted, and the
-# lookup sometimes drops, so retry.
-staple() {
+# Runs a stapler command, retrying. Stapling and validating both fetch the
+# ticket from Apple's servers: it can take a little while to appear after
+# the submission is accepted, and the connection sometimes drops.
+stapler() {
     for ATTEMPT in 1 2 3 4 5 6; do
-        if xcrun stapler staple "$1"; then
+        if xcrun stapler "$@"; then
             return 0
         fi
         if [ "$ATTEMPT" -eq 6 ]; then
-            echo "error: couldn't staple $(basename "$1") after $ATTEMPT tries" >&2
+            echo "error: 'stapler $*' failed $ATTEMPT times" >&2
             exit 1
         fi
-        echo "Stapling failed (try $ATTEMPT), retrying in 20s..."
+        echo "stapler $1 failed (try $ATTEMPT), retrying in 20s..."
         sleep 20
     done
 }
@@ -38,10 +38,10 @@ echo "═══ Verifying the app ═══"
 codesign --verify --deep --strict --verbose=2 "$APP"
 # Tauri staples the app after notarising it, but carries on if that fails.
 if ! xcrun stapler validate -q "$APP"; then
-    echo "The app has no ticket stapled to it, stapling it now."
-    staple "$APP"
+    echo "The app has no ticket stapled to it (or the check couldn't reach Apple), stapling it now."
+    stapler staple "$APP"
 fi
-xcrun stapler validate "$APP"
+stapler validate "$APP"
 spctl --assess --type execute --verbose=2 "$APP"
 
 echo ""
@@ -60,9 +60,9 @@ if [ "$STATUS" != "Accepted" ]; then
     exit 1
 fi
 
-staple "$DMG"
+stapler staple "$DMG"
 
 echo ""
 echo "═══ Verifying the DMG ═══"
-xcrun stapler validate "$DMG"
+stapler validate "$DMG"
 spctl --assess --type open --context context:primary-signature --verbose=2 "$DMG"
