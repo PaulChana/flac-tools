@@ -60,6 +60,42 @@ clean:
 bump version:
     bash scripts/bump-version.sh {{version}}
 
+# Bump the version, commit everything, push main and the v<version> tag (CI builds the release)
+release version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    TAG="v{{version}}"
+    BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    if [ "$BRANCH" != "main" ]; then
+        echo "error: on branch '$BRANCH', switch to main first" >&2
+        exit 1
+    fi
+    if [ ! -f "release/notes/{{version}}.md" ]; then
+        echo "error: no release notes at release/notes/{{version}}.md" >&2
+        exit 1
+    fi
+    if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null || git ls-remote --exit-code --tags origin "$TAG" >/dev/null; then
+        echo "error: tag $TAG already exists" >&2
+        exit 1
+    fi
+    bash scripts/bump-version.sh {{version}}
+    git add -A
+    echo ""
+    echo "Release {{version}} will commit:"
+    git status --short
+    echo ""
+    read -r -p "Commit, push main and push $TAG? [y/N] " ANSWER
+    if [[ ! "$ANSWER" =~ ^[Yy] ]]; then
+        echo "Stopped. The version bump and staged changes are left in place."
+        exit 1
+    fi
+    git commit -m "Release {{version}}"
+    git push origin main
+    git tag "$TAG"
+    git push origin "$TAG"
+    echo ""
+    echo "Pushed $TAG. The Release workflow on GitHub is building it now (see the Actions tab)."
+
 # Test, then build, sign and notarise the app and its DMG, into release/dist/<version>/
 deploy: deps _deploy-notes _deploy-test _deploy-bundle _deploy-summary
 

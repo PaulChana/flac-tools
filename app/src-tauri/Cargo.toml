@@ -1,6 +1,6 @@
 [package]
 name = "flac-tools"
-version = "1.0.0"
+version = "1.1.0"
 description = "Browse and edit FLAC metadata"
 authors = ["Paul Chana"]
 edition = "2021"
