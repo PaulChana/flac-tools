@@ -19,6 +19,8 @@ export const PREFERRED_TAGS = [
 
 export const NUMBERING_TAGS = new Set(PREFERRED_TAGS.slice(0, 6));
 
+export const CENTERED_TAGS = new Set(["DATE", "YEAR", "GENRE"]);
+
 export const STANDARD_TAGS = [
   "TITLE",
   "ARTIST",

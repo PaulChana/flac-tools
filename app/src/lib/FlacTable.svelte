@@ -4,7 +4,7 @@
   import type { FlacInfo } from "./api";
   import { app } from "./state.svelte";
   import RenameField from "./RenameField.svelte";
-  import { NUMBERING_TAGS, compareText, orderTagKeys, tagValue, yearMismatch } from "./tags";
+  import { CENTERED_TAGS, NUMBERING_TAGS, compareText, orderTagKeys, tagValue, yearMismatch } from "./tags";
   import { formatAudio, formatDuration, formatSize, relative } from "./format";
   import { t } from "./i18n";
 
@@ -40,22 +40,23 @@
       id: k,
       label: k,
       get: (f: FlacInfo) => tagValue(f, k),
-      center: NUMBERING_TAGS.has(k),
+      center: NUMBERING_TAGS.has(k) || CENTERED_TAGS.has(k) || k.startsWith("REPLAYGAIN_"),
     })),
     {
       id: "@length",
       label: $t("Length"),
       get: (f) => formatDuration(f.duration),
       sortValue: (f) => f.duration,
-      num: true,
+      center: true,
     },
     {
       id: "@format",
       label: $t("Format"),
       get: (f) => formatAudio(f.sampleRate, f.bitsPerSample, f.channels),
       sortValue: (f) => f.sampleRate * 100 + f.bitsPerSample,
+      center: true,
     },
-    { id: "@size", label: $t("Size"), get: (f) => formatSize(f.size), sortValue: (f) => f.size, num: true },
+    { id: "@size", label: $t("Size"), get: (f) => formatSize(f.size), sortValue: (f) => f.size, center: true },
   ]);
 
   let problems = $derived(new Map(files.map((f) => [f.path, fileProblems(f)])));

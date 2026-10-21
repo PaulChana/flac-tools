@@ -45,21 +45,30 @@ app/src-tauri/target/release/bundle/macos/FLAC Tools.app
 
 The first build takes a few minutes while Cargo compiles the dependencies. Later builds are much faster.
 
-The app is not signed. It runs on the Mac that built it. To use it on another Mac you need to sign it, or clear the quarantine flag after copying it there: `xattr -cr "FLAC Tools.app"`.
+This build is not signed (signed releases are made with `just release`, see [Releasing](#releasing)). It runs on the Mac that built it. To use it on another Mac you need to sign it, or clear the quarantine flag after copying it there: `xattr -cr "FLAC Tools.app"`.
 
 #### Other commands
 
 Run `just` with no arguments to list them all.
 
-| Command          | What it does                                                        |
-| ---------------- | ------------------------------------------------------------------- |
-| `just dev`       | Runs the app in development. The UI reloads when you save a file.   |
-| `just test`      | Runs the Rust unit tests and the Svelte/TypeScript type check.      |
-| `just test-rust` | Runs only the Rust unit tests.                                      |
-| `just check`     | Runs only the type check (`svelte-check`).                          |
-| `just install`   | Builds the app and copies it into `/Applications`.                  |
-| `just open`      | Opens the built app.                                                |
-| `just clean`     | Deletes the build output, `dist/` and `node_modules/`.              |
+| Command                          | What it does                                                                                                  |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `just deps`                      | Installs the npm packages, only when `package-lock.json` has changed. The other commands run this first.     |
+| `just build`                     | Builds the release app bundle, `FLAC Tools.app` (unsigned).                                                   |
+| `just dev`                       | Runs the app in development. The UI reloads when you save a file.                                             |
+| `just ui`                        | Builds only the UI, into `app/dist`. The Rust app embeds it, so the Rust tests need it.                       |
+| `just test`                      | Runs the Rust unit tests and the Svelte/TypeScript type check.                                                |
+| `just test-rust`                 | Runs only the Rust unit tests.                                                                                |
+| `just check`                     | Runs only the type check (`svelte-check`) and the translation check.                                          |
+| `just install`                   | Builds the app and copies it into `/Applications`.                                                            |
+| `just open`                      | Opens the built app.                                                                                          |
+| `just clean`                     | Deletes the build output, `dist/` and `node_modules/`.                                                        |
+| `just bump <version>`            | Sets the version in `Cargo.toml`, `tauri.conf.json` and `package.json`.                                       |
+| `just release <version>`         | Bumps the version, commits, and pushes `main` and the `v<version>` tag. GitHub Actions then builds the release. |
+| `just deploy`                    | Tests, then builds, signs and notarises the app and its DMG, into `release/dist/<version>/`.                  |
+| `just notary-password <apple-id>` | Stores the Apple ID app-specific password used to notarise in the macOS Keychain. It prompts for the password and doesn't echo it. |
+| `just notary-check`              | Checks the Developer ID certificate and the notarisation credentials.                                         |
+| `just notarize-dmg`              | Notarises and staples the DMG from the last build. Use it to retry only that step.                            |
 
 If you don't have `just`, the same steps by hand are:
 
@@ -73,6 +82,43 @@ npm run check                                          # type check
 ```
 
 One test, `trashes_folders`, is skipped by default because it moves a folder to your Trash. Run it with `cargo test --manifest-path app/src-tauri/Cargo.toml -- --ignored`.
+
+#### Releasing
+
+Releases are built, signed, notarised and published by the **Release** workflow
+(`.github/workflows/release.yml`) when a `v*` tag is pushed. To make one:
+
+1. Commit or finish the changes that go in the release, on `main`.
+2. Write the release notes in `release/notes/<version>.md`, e.g. `release/notes/1.2.0.md`. Write what changed for people using the app, in Markdown. They become the GitHub release's description. See [release/notes/README.md](release/notes/README.md).
+3. Run `just release <version>`, e.g. `just release 1.2.0`. It:
+   - stops if you're not on `main`, if the notes file is missing, or if the tag already exists, locally or on GitHub
+   - sets the version in `Cargo.toml`, `tauri.conf.json` and `package.json`
+   - stages everything (`git add -A`) and shows what will be committed
+   - asks for confirmation, then commits `Release <version>`, pushes `main`, and creates and pushes the `v<version>` tag
+
+   If you answer no, the version bump stays in place and the changes stay staged.
+4. Watch the run in the repo's **Actions** tab. The workflow checks the tag matches the version in `app/package.json` and that the notes exist, runs `just deploy`, then creates the GitHub release with the DMG attached as `FLAC-Tools-<version>.dmg`. A version with a hyphen, e.g. `1.3.0-beta.1`, is published as a pre-release.
+
+The workflow needs these repository secrets:
+
+| Secret                       | What it is                                                         |
+| ---------------------------- | ------------------------------------------------------------------ |
+| `APPLE_CERTIFICATE`          | The Developer ID Application certificate and key, as a base64 `.p12`. |
+| `APPLE_CERTIFICATE_PASSWORD` | The password of that `.p12`.                                       |
+| `APPLE_ID`                   | The Apple ID used to notarise.                                     |
+| `APPLE_PASSWORD`             | An app-specific password for that Apple ID.                        |
+
+##### Building a signed release locally
+
+`just deploy` does the same build on your Mac, without publishing anything. It builds the version currently set in `app/package.json`; set that with `just bump <version>`. If the release notes are missing, it opens `$EDITOR` to write them, or reads them from the terminal. The DMG and notes end up in `release/dist/<version>/`.
+
+It needs, once per Mac:
+
+- the Developer ID Application certificate for team `M9T382L3AL` in your login keychain
+- the Apple ID app-specific password, stored with `just notary-password <apple-id>`
+- a notarytool profile, stored with `xcrun notarytool store-credentials flac-tools-notary --apple-id <apple-id> --team-id M9T382L3AL`
+
+`just notary-check` confirms all three. If notarising the DMG fails, for example on a network error, run `just notarize-dmg` to retry that step without rebuilding.
 
 #### Where the app finds the scripts
 
