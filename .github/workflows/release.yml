@@ -86,6 +86,30 @@ jobs:
             --title "FLAC Tools ${VERSION}" \
             --notes-file "release/notes/${VERSION}.md" \
             $PRERELEASE
+          echo "SHA256=$(shasum -a 256 "$ASSET" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+
+      - name: Update the Homebrew cask
+        if: ${{ !contains(env.VERSION, '-') }}
+        env:
+          DEPLOY_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
+        run: |
+          KEY="$RUNNER_TEMP/tap-deploy-key"
+          printf '%s\n' "$DEPLOY_KEY" > "$KEY"
+          chmod 600 "$KEY"
+          export GIT_SSH_COMMAND="ssh -i $KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          TAP="$RUNNER_TEMP/homebrew-tap"
+          git clone --depth 1 git@github.com:PaulChana/homebrew-tap.git "$TAP"
+          CASK="$TAP/Casks/flac-tools.rb"
+          sed -i '' -E \
+            -e "s/^  version \".*\"/  version \"${VERSION}\"/" \
+            -e "s/^  sha256 \".*\"/  sha256 \"${SHA256}\"/" \
+            "$CASK"
+          git -C "$TAP" diff --exit-code --quiet && { echo "Cask already up to date"; exit 0; }
+          git -C "$TAP" -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -am "flac-tools ${VERSION}"
+          git -C "$TAP" push
+          rm -f "$KEY"
 
       - name: Remove the signing keychain
         if: always()
