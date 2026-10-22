@@ -3,6 +3,8 @@
   import { tick } from "svelte";
   import { menu, type MenuEntry } from "./menu.svelte";
 
+  const TIP_DELAY = 2000;
+
   let menuEl = $state<HTMLDivElement>();
   let subEl = $state<HTMLDivElement>();
   let left = $state(0);
@@ -104,6 +106,9 @@
       role="menuitem"
       disabled={entry.enabled === false}
       data-sub={!sub && "items" in entry ? i : undefined}
+      title={"tip" in entry ? entry.tip : undefined}
+      data-tip-delay={"tip" in entry ? TIP_DELAY : undefined}
+      data-tip-side="right"
       onmouseenter={(e) => {
         if (sub) return;
         if ("items" in entry && entry.enabled !== false) openSub(i, e.currentTarget);

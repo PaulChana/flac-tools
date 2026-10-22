@@ -23,6 +23,13 @@ function hide() {
 function place(el: HTMLElement, box: HTMLDivElement) {
   const r = el.getBoundingClientRect();
   const b = box.getBoundingClientRect();
+  if (el.dataset.tipSide === "right") {
+    let left = r.right + OFFSET;
+    if (left + b.width > window.innerWidth - 4) left = r.left - b.width - OFFSET;
+    box.style.left = `${Math.max(4, left)}px`;
+    box.style.top = `${Math.max(4, Math.min(r.top, window.innerHeight - b.height - 4))}px`;
+    return;
+  }
   let top = r.bottom + OFFSET;
   if (top + b.height > window.innerHeight - 4) top = r.top - b.height - OFFSET;
   const left = Math.max(4, Math.min(r.left + r.width / 2 - b.width / 2, window.innerWidth - b.width - 4));
@@ -34,7 +41,7 @@ function show(el: HTMLElement) {
   const text = el.dataset.tip;
   if (!text || !el.isConnected) return;
   tip = document.createElement("div");
-  tip.className = "app-tooltip";
+  tip.className = el.dataset.tipSide === "right" ? "app-tooltip wide" : "app-tooltip";
   tip.setAttribute("role", "tooltip");
   tip.textContent = text;
   document.body.appendChild(tip);
@@ -54,7 +61,7 @@ if (typeof document !== "undefined") {
     el.dataset.tip = text;
     el.removeAttribute("title");
     current = el;
-    timer = setTimeout(() => current === el && show(el), SHOW_DELAY);
+    timer = setTimeout(() => current === el && show(el), Number(el.dataset.tipDelay) || SHOW_DELAY);
   });
   document.addEventListener("mouseout", (e) => {
     if (current && !current.contains(e.relatedTarget as Node | null)) hide();

@@ -7,7 +7,7 @@
   import { contextMenu } from "./menu.svelte";
   import { trashItems } from "./actions";
   import { runner } from "./runner.svelte";
-  import { prettyToolName } from "./args";
+  import { prettyToolName, unwrap } from "./args";
   import type { MenuEntry } from "./menu.svelte";
   import { coverThumb } from "./coverThumbs";
   import { t } from "./i18n";
@@ -73,6 +73,7 @@
         text: multi ? $t("Run tool on {count} folders", { values: { count: targets.length } }) : $t("Run tool"),
         items: runner.tools.map((t) => ({
           text: prettyToolName(t.name) + (runner.requiredInputs(t.name).length ? "…" : ""),
+          tip: unwrap(t.description),
           action: () => runner.runToolFromMenu(t.name, targets),
         })),
         enabled: runner.tools.length > 0 && !runner.busy,

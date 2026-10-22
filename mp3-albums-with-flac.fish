@@ -9,7 +9,8 @@
 # "(1999)", "[FLAC]", "(320kbps)" or "1999 - " in front. Albums that look
 # close but don't match exactly (one name containing the other, under the
 # same artist) are listed at the end of the script as commented-out moves,
-# for you to check and uncomment.
+# for you to check and uncomment. Last, the script removes any artist folder
+# the albums came from that is left empty (a lone .DS_Store counts as empty).
 #
 # A summary goes to stderr, so redirecting stdout gives a clean script.
 #
@@ -115,6 +116,18 @@ moves(\@matches, "");
 if (@near) {
     print "\n# --- Near misses: similar names under the same artist. Uncomment the ones that are the same album. ---\n";
     moves(\@near, "# ");
+}
+my %seen;
+my @sources = grep { !$seen{$_}++ } map { "$mp3_root/" . $_->[0][1] } @matches, @near;
+if (@sources) {
+    print "\n# --- Finally, remove the artist folders the albums came from, if nothing is left in them. ---\n";
+    print q{remove_if_empty() {
+    [ -d "$1" ] || return 0
+    [ -z "$(find "$1" -mindepth 1 ! -name .DS_Store | head -n 1)" ] || return 0
+    rm -f "$1/.DS_Store" && rmdir "$1" && echo "Removed empty folder: $1"
+}
+};
+    print "remove_if_empty ", shq($_), "\n" for @sources;
 }
 printf STDERR "FLAC albums: %d\nMP3 albums:  %d\nMatched:     %d\nNear misses: %d (commented out)\n",
     $flac_count // 0, scalar @mp3, scalar @matches, scalar @near;

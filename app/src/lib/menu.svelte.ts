@@ -1,5 +1,5 @@
 export type MenuEntry =
-  | { text: string; action: () => void; enabled?: boolean; checked?: boolean; danger?: boolean }
+  | { text: string; action: () => void; enabled?: boolean; checked?: boolean; danger?: boolean; tip?: string }
   | { text: string; items: MenuEntry[]; enabled?: boolean }
   | "separator";
 

@@ -48,6 +48,17 @@ pub struct TagChange {
     value: Option<String>,
 }
 
+// metaflac panics on blocks that are cut short, which is what a file looks
+// like while a script is still writing it.
+fn no_panic<T>(f: impl FnOnce() -> Result<T, String>) -> Result<T, String> {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(f))
+        .unwrap_or_else(|_| Err("damaged or partly written FLAC metadata".into()))
+}
+
+fn read_tag(path: &str) -> Result<Tag, String> {
+    no_panic(|| Tag::read_from_path(path).map_err(|e| e.to_string()))
+}
+
 fn scan_metadata(path: &Path, info: &mut FlacInfo, id3v1: bool) -> Result<(), String> {
     use metaflac::block::{StreamInfo, VorbisComment};
     use std::io::{BufReader, Read, Seek, SeekFrom};
@@ -88,7 +99,7 @@ fn scan_metadata(path: &Path, info: &mut FlacInfo, id3v1: bool) -> Result<(), St
                 let mut data = vec![0u8; len];
                 r.read_exact(&mut data).map_err(err)?;
                 if kind == 4 {
-                    let vc = VorbisComment::from_bytes(&data).map_err(|e| e.to_string())?;
+                    let vc = no_panic(|| VorbisComment::from_bytes(&data).map_err(|e| e.to_string()))?;
                     info.vendor = vc.vendor_string;
                     let mut comments: Vec<_> = vc.comments.into_iter().collect();
                     comments.sort();
@@ -165,7 +176,7 @@ fn front_picture(tag: &Tag) -> Option<&Picture> {
 
 #[tauri::command]
 pub async fn read_picture(path: String) -> Result<Option<PictureInfo>, String> {
-    let tag = Tag::read_from_path(&path).map_err(|e| e.to_string())?;
+    let tag = read_tag(&path)?;
     let pic = front_picture(&tag);
     Ok(pic.map(|p| {
         let mime = if p.mime_type.is_empty() {
@@ -193,7 +204,7 @@ fn thumb_cache() -> &'static Mutex<HashMap<(u64, u32), Option<String>>> {
 }
 
 fn thumbnail(path: &str, size: u32) -> Option<String> {
-    let tag = Tag::read_from_path(path).ok()?;
+    let tag = read_tag(path).ok()?;
     let data = &front_picture(&tag)?.data;
     let mut h = DefaultHasher::new();
     data.hash(&mut h);
@@ -229,7 +240,7 @@ fn metadata_len(tag: &Tag, include_padding: bool) -> u32 {
 fn edit_tag(path: &str, edit: impl FnOnce(&mut Tag)) -> Result<(), String> {
     crate::cache::forget(path);
     let err = |e: &dyn std::fmt::Display| format!("{path}: {e}");
-    let mut tag = Tag::read_from_path(path).map_err(|e| err(&e))?;
+    let mut tag = read_tag(path).map_err(|e| err(&e))?;
     let available = metadata_len(&tag, true);
     edit(&mut tag);
     if metadata_len(&tag, false) + 4 <= available {
@@ -403,6 +414,26 @@ mod tests {
         let img = image::load_from_memory(&bytes).unwrap();
         assert_eq!((img.width(), img.height()), (48, 32));
         assert!(thumbs[1].is_none());
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn half_written_file_is_an_error_not_a_panic() {
+        let dir = temp_dir("partial");
+        let Some(a) = sample(&dir, "a.flac") else { return };
+        let mut png = Cursor::new(Vec::new());
+        image::DynamicImage::new_rgb8(600, 400).write_to(&mut png, image::ImageFormat::Png).unwrap();
+        let mut tag = Tag::read_from_path(&a).unwrap();
+        tag.add_picture("image/png", PictureType::CoverFront, png.into_inner());
+        tag.save().unwrap();
+        let body = fs::read(&a).unwrap();
+        let png_at = body.windows(4).position(|w| w == b"\x89PNG").unwrap();
+        fs::write(&a, &body[..png_at + 10]).unwrap();
+
+        let thumbs = tauri::async_runtime::block_on(read_thumbnails(vec![a.clone()], 48));
+        assert!(thumbs[0].is_none());
+        assert!(tauri::async_runtime::block_on(read_picture(a.clone())).is_err());
+        assert!(tauri::async_runtime::block_on(save_tags(a.clone(), vec![("TITLE".into(), "x".into())])).is_err());
         fs::remove_dir_all(dir).unwrap();
     }
 

@@ -3,7 +3,7 @@
   import { runner, quoteArg, type Chain, type Step } from "./runner.svelte";
   import { app } from "./state.svelte";
   import { contextMenu } from "./menu.svelte";
-  import { parseUsage, prettyToolName, shellSplit } from "./args";
+  import { parseUsage, prettyToolName, shellSplit, unwrap } from "./args";
   import { t } from "./i18n";
 
   let { chain, targetLabel }: { chain: Chain; targetLabel: string } = $props();
@@ -31,6 +31,7 @@
     contextMenu(
       runner.tools.map((tl) => ({
         text: prettyToolName(tl.name),
+        tip: unwrap(tl.description),
         action: () => runner.addStep(chain.id, { tool: tl.name, args: [] }),
       })),
     );

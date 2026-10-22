@@ -289,6 +289,10 @@ table.grid td.num {
     opacity 0.15s,
     transform 0.15s;
 }
+.app-tooltip.wide {
+  max-width: 28rem;
+}
+
 .app-tooltip.visible {
   opacity: 1;
   transform: none;

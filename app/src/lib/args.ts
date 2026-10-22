@@ -66,6 +66,10 @@ export function prettyToolName(name: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+export function unwrap(description: string): string {
+  return description.replace(/([^\n])\n(?![\n\s\-*•])/g, "$1 ");
+}
+
 export function summary(description: string): string {
   const flat = description.replace(/\s+/g, " ").trim();
   const m = flat.match(/^.*?[.!?](\s|$)/);
